@@ -1,0 +1,94 @@
+---
+title: "Analysis"
+output: html_document
+---
+
+
+0. Load Libraries
+```{r loadLibs}
+library(knitr)
+library(tidyr)
+library(dplyr)
+library(lubridate)
+```
+
+1. Load the datafile.
+
+```{r LoadData, cache=TRUE, message=FALSE}
+
+download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2","stormData.csv.bz2", method="curl")
+unzip("stormData.csv.bz2", "stormData2.csv")
+data<-read.csv("stormData.csv", header=TRUE, stringsAsFactors=FALSE)
+data<-tbl_df(data)
+```
+
+
+Cleaning Data
+```{r cleanData}
+data[grep("THUNDER",data$EVTYPE),"EVTYPE"]<-"THUNDERSTORM"
+data[grep("TORNADO",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"TORNADO"
+data[grep("WIND",data$EVTYPE, ignore.case=TRUE), "EVTYPE"]<-"WIND"
+
+data[grep("FUNNEL",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"TORNADO"
+data[grep("HURRICANE",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"HURRICANE"
+data[grep("SNOW",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"SNOW"
+data[grep("BLIZZ",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"SNOW"
+data[grep("ICE",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"ICE"
+data[grep("SLEET",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"ICE"
+data[grep("ICY",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"ICE"
+data[grep("FREEZ",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"ICE"
+data[grep("FLOOD",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"FLOODING"
+data[grep("LIGHTN",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"LIGHTNING"
+data[grep("HEAT|HOT|WARM",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"HEAT WAVE"
+data[grep("COLD|LOW",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"COLD WAVE"
+data[grep("WINTER",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"SNOW"
+data[grep("WATERSPOUT",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"TORNADO"
+data[grep("(TROPICAL|COASTAL)(.|)STORM",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"HURRICANE"
+data[grep("RAIN",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"RAINFALL"
+data[grep("HAIL",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"HAIL"
+data[grep("FIRE",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"FOREST FIRE"
+
+
+```
+
+You can also embed plots, for example:
+unique(data, EVTYPE)
+```{r cleanData}
+PopImpactDF<- select(data, STATE, contains("DMG"), FATALITIES, INJURIES, EVTYPE)
+PopImpactDF <- PopImpactDF %>% filter(!(FATALITIES<1 & INJURIES <1))
+
+
+PopImpactSummaryDF<-group_by(PopImpactDF, EVTYPE) %>% summarise(Total_Fatalities=sum(FATALITIES), Total_Injuries=sum(INJURIES), Total_Events=n()) %>% mutate(Total_Affected=Total_Injuries+Total_Fatalities
+) %>% arrange(desc(Total_Affected))
+
+
+
+head(PopImpactSummaryDF,10)
+
+ggplot(PopImpactSummaryDF[1:10,])+geom_bar(aes(EVTYPE, Total_Fatalities), stat="identity", fill="navy")+geom_bar(aes(EVTYPE, Total_Injuries), stat="identity", fill="brown")
+
+```
+
+
+
+Looking at the Economic Impact
+
+```{r econImpact}
+econImpactDF<- select(data, STATE, contains("DMG"), FATALITIES, INJURIES, EVTYPE)
+econImpactDF <- econImpactDF %>% filter(!(PROPDMG<1 & CROPDMG <1)) %>% select(-FATALITIES, -INJURIES)
+
+unique(econImpactDF$PROPDMGEXP)
+unique(econImpactDF$CROPDMGEXP)
+
+for(val in unique(econImpactDF$PROPDMGEXP)) 
+    econImpactDF[econImpactDF["PROPDMGEXP"]==val,"PROPEXP"]<-10^switch(EXPR=val, K =3, M = 6,B=9, H=2, 0)
+
+for(val in unique(econImpactDF$CROPDMGEXP)) 
+    econImpactDF[econImpactDF["CROPDMGEXP"]==val,"CROPEXP"]<-10^switch(EXPR=val, K =3, M = 6,B=9, H=2, 0)
+
+econImpactDF<-econImpactDF %>% mutate(PROPDMG=PROPDMG*PROPEXP, CROPDMG=CROPDMG*CROPEXP) %>% select(-CROPEXP, -PROPEXP)
+
+econImpactSummaryDF<-econImpactDF%>% mutate(Damages=PROPDMG+CROPDMG) %>% group_by(EVTYPE) %>% summarise(Total_Damages=sum(Damages), Total_events=n()) %>% arrange(desc(Total_Damages))
+
+```
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
