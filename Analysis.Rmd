@@ -1,29 +1,36 @@
 ---
-title: "Analysis"
+title: "Analysis Of US Severe Weather Data and its Impact on Poppulation and Property"
 output: html_document
 ---
 
+### Synopsis
+Storms and other severe weather events can cause both public health and economic problems for communities and municipalities. Many severe events can result in fatalities, injuries, and property damage, and preventing such outcomes to the extent possible is a key concern.
+The Below Analysis is conducted to identify the events which are most damaging to Poppulation and Property.
 
-0. Load Libraries
-```{r loadLibs}
+####1. Load Libraries
+```{r loadLibs, message=FALSE}
 library(knitr)
 library(tidyr)
 library(dplyr)
 library(lubridate)
+library(ggplot2)
 ```
 
-1. Load the datafile.
+####2. Load the datafile.
 
 ```{r LoadData, cache=TRUE, message=FALSE}
 
-download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2","stormData.csv.bz2", method="curl")
-unzip("stormData.csv.bz2", "stormData2.csv")
-data<-read.csv("stormData.csv", header=TRUE, stringsAsFactors=FALSE)
+##  download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2","stormData.csv.bz2", method="curl")
+## unzip("stormData.csv.bz2", "stormData2.csv")
+## data<-read.csv("stormData.csv", header=TRUE, stringsAsFactors=FALSE)
 data<-tbl_df(data)
 ```
 
 
-Cleaning Data
+####3.Cleaning Data
+Taking a look at the current range of EVTYPE, we see that there are quite some similar categories which can be renamed and regrouped for accurancy.
+Below we try to identify and rename most of those cases.
+
 ```{r cleanData}
 data[grep("THUNDER",data$EVTYPE),"EVTYPE"]<-"THUNDERSTORM"
 data[grep("TORNADO",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"TORNADO"
@@ -51,9 +58,14 @@ data[grep("FIRE",data$EVTYPE, ignore.case=TRUE),"EVTYPE"]<-"FOREST FIRE"
 
 ```
 
-You can also embed plots, for example:
-unique(data, EVTYPE)
-```{r cleanData}
+
+####4. Impact on Poppulation (Injuries and Fatalities)
+
+Here we'll analyse which events have caused the most damage to poppulation causing Injuries and Fatalities. 
+ - First select on those columns required for analysis.
+ -
+
+```{r PoppulationData}
 PopImpactDF<- select(data, STATE, contains("DMG"), FATALITIES, INJURIES, EVTYPE)
 PopImpactDF <- PopImpactDF %>% filter(!(FATALITIES<1 & INJURIES <1))
 
@@ -91,4 +103,11 @@ econImpactDF<-econImpactDF %>% mutate(PROPDMG=PROPDMG*PROPEXP, CROPDMG=CROPDMG*C
 econImpactSummaryDF<-econImpactDF%>% mutate(Damages=PROPDMG+CROPDMG) %>% group_by(EVTYPE) %>% summarise(Total_Damages=sum(Damages), Total_events=n()) %>% arrange(desc(Total_Damages))
 
 ```
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+### Results 
+
+Here we'll tabulate the top 10 events that were most damaging from human poppulation perspective.
+<Table of top 10 Events>
+
+Here we'll tabulate the top 10 events that were most damaging from Economic perspective.
+<Table of top 10 Events>
