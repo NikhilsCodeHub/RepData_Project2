@@ -125,7 +125,7 @@ data[grep(&quot;FIRE&quot;,data$EVTYPE, ignore.case=TRUE),&quot;EVTYPE&quot;]&lt
 <li>Then group by EVTYPE to summarise Total_Affected.</li>
 <li>Display the top 10 results in descending order of Total_Affected.</li>
 <li>Also displayed is Total numer of ocuurences of each Event.</li>
-<li>We’ll make a quick plot of top 7 EVTYPES and its impact on population.</li>
+<li>We’ll make a ggplot plot of top 7 EVTYPES and its impact on population.</li>
 </ul>
 <pre class="r"><code>PopImpactDF&lt;- select(data, BGN_DATE,STATE, contains(&quot;DMG&quot;), FATALITIES, INJURIES, EVTYPE)
 PopImpactDF &lt;- PopImpactDF %&gt;% filter(!(FATALITIES&lt;1 &amp; INJURIES &lt;1))

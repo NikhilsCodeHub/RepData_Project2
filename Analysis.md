@@ -73,7 +73,7 @@ Here we'll analyse which events have caused the most damage to Population causin
  - Then group by EVTYPE to summarise Total_Affected.
  - Display the top 10 results in descending order of Total_Affected.
  - Also displayed is Total numer of ocuurences of each Event.
- - We'll make a quick plot of top 7 EVTYPES and its impact on population.
+ - We'll make a ggplot plot of top 7 EVTYPES and its impact on population.
 
 
 ```r
